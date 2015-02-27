@@ -42,13 +42,15 @@ class ESP8266ClientClass
 		bool connect(char * host, unsigned int port);
 		bool isConnected(void);
 		void disconnect(void);
-		void println(char * buffer);
-		void print(char * buffer);
-		void println(const __FlashStringHelper *ifsh);
-		void print(const __FlashStringHelper *ifsh);
+		void sockprint(char * buffer);
+		void sockprint(const __FlashStringHelper *ifsh);
+		void sockprintln(char * buffer);
+		void sockprintln(const __FlashStringHelper *ifsh);
+#if 0
 		void startScan(void);
 		bool scanEntry(char * ssid, char * rssi, int *security);
 		size_t read(char * buffer, size_t bufferSize);
+#endif
 };
 
 extern ESP8266ClientClass wifi;

@@ -1,12 +1,13 @@
 #include "Arduino.h"
 #include "ESP8266_client.h"
+#include <avr/pgmspace.h>
 
 #define WAIT_INIT_MS	5000
 #define AP_WAIT_MS		10000
 #define FIND_PEEK_DELAY_MS	5
 #define WAIT_CONNECTION_MS	10000
 #define NORMAL_COMMAND_RESP_MS	100
-
+#define WAIT_SEND_MS	2000
 
 
 ESP8266ClientClass::ESP8266ClientClass(void)
@@ -72,11 +73,14 @@ bool ESP8266ClientClass::find(const __FlashStringHelper *ifsh, bool line)
 		if (myChar == 0)
 			break;
 		byte readBytes = mySerial.readBytes(&inChar, 1);
-		
-		Serial.println(myChar);
-		Serial.println(inChar);
-		
+
+#if 1
+		Serial.print(myChar);Serial.print(" ");
+		Serial.print(inChar);Serial.print(" ");
+#endif
+			
 		if (!readBytes || myChar != inChar) {
+			
 			return false;
 		}
 		
@@ -248,24 +252,29 @@ bool ESP8266ClientClass::connect(char * host, unsigned int port)
 	mySerial.flushInput();
 	mySerial.setTimeout(NORMAL_COMMAND_RESP_MS);
 	if (!safePrint(F("AT+CIPSTART=\"TCP\",\"")))
-		return false;
+		goto out;
 	if (!safePrint(host))
-		return false;
+		goto out;
 	if (!safePrint(F("\",")))
-		return false;
+		goto out;
 	sprintf(port_buffer, "%d", port);
 	if (!safePrint(port_buffer, true))
-		return false;
+		goto out;
 	
 	mySerial.setTimeout(WAIT_CONNECTION_MS);
 	
 	if (!find(F("\r\nOK"), true))
-		return false;
+		goto out;
 	
 	if (!find(F("Linked"), true))
-		return false;
+		goto out;
 	
 	return true;
+	
+out:
+	delay(100);
+	mySerial.flushInput();
+	return false;
 }
 
 bool ESP8266ClientClass::isConnected(void)
@@ -276,11 +285,18 @@ bool ESP8266ClientClass::isConnected(void)
 	mySerial.flushInput();
 	mySerial.setTimeout(NORMAL_COMMAND_RESP_MS);
 	if (!safePrint(F("AT+CIPSTART=?"), true))
-		return false;
+		goto out;
 	if (!find(F("+CIPSTART:")))
-		return false;
-			
+		goto out;
+	
+	delay(500);
+	mySerial.flushInput();
+	
 	return true;
+	
+out:
+	delay(500);
+	mySerial.flushInput();
 }
 
 void ESP8266ClientClass::disconnect(void)
@@ -300,6 +316,68 @@ void ESP8266ClientClass::disconnect(void)
 out:
 	delay(10);
 	mySerial.flushInput();
+}
+
+void ESP8266ClientClass::sockprint(char * buffer)
+{
+	char len_buffer[10];
+	
+	if (conState == WL_UNINIT || conState == WL_DISCONNECTED)
+		return;
+	
+	mySerial.flushInput();
+	mySerial.setTimeout(WAIT_SEND_MS);
+	
+	if(!safePrint(F("AT+CIPSEND=")))
+		goto out;
+	
+	sprintf(len_buffer, "%d", strlen(buffer));
+	Serial.println("hello");
+	Serial.println(len_buffer);
+	Serial.println(buffer);
+	if(!safePrint((char*)len_buffer, true))
+		goto out;
+	if(!find(F(">")))
+		goto out;
+	
+	if(!safePrint(buffer))
+		goto out;
+	if(!safePrint(F(""), true))
+		goto out;
+	if(!find(F("SEND OK"), true))
+		goto out;
+	
+	delay(20);
+	
+	return;
+
+out:
+	delay(500);
+	mySerial.flushInput();
+}
+
+void ESP8266ClientClass::sockprint(const __FlashStringHelper *ifsh)
+{
+	char cbuffer[2];
+	const char PROGMEM *p = (const char PROGMEM *) ifsh;
+	int i;
+	
+	if (conState == WL_UNINIT || conState == WL_DISCONNECTED)
+		return;
+	
+	Serial.println("f path");
+	
+	mySerial.flushInput();
+	mySerial.setTimeout(WAIT_SEND_MS);
+	
+	cbuffer[1] = 0;
+	i = 0;
+	while(true) {
+		cbuffer[0] = pgm_read_byte_near(p + i);
+		if (cbuffer[0] == 0) break;
+		sockprint(cbuffer);
+		i++;
+	}
 }
 
 ESP8266ClientClass wifi;
