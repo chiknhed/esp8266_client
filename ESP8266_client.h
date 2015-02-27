@@ -39,7 +39,7 @@ class ESP8266ClientClass
 		ESP8266ClientClass();
 		wl_status_t begin(char * ssid, char * password = NULL);
 		wl_status_t status(void);
-		void connect(char * host, unsigned int port);
+		bool connect(char * host, unsigned int port);
 		bool isConnected(void);
 		void println(char * buffer);
 		void print(char * buffer);

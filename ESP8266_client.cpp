@@ -4,6 +4,8 @@
 #define WAIT_INIT_MS	5000
 #define AP_WAIT_MS		10000
 #define FIND_PEEK_DELAY_MS	5
+#define WAIT_CONNECTION_MS	10000
+#define NORMAL_COMMAND_RESP_MS	100
 
 
 
@@ -70,6 +72,9 @@ bool ESP8266ClientClass::find(const __FlashStringHelper *ifsh, bool line)
 		if (myChar == 0)
 			break;
 		byte readBytes = mySerial.readBytes(&inChar, 1);
+		
+		Serial.println(myChar);
+		Serial.println(inChar);
 		
 		if (!readBytes || myChar != inChar) {
 			return false;
@@ -231,6 +236,36 @@ wl_status_t ESP8266ClientClass::status(void)
 	}
 	
 	return conState;
+}
+
+bool ESP8266ClientClass::connect(char * host, unsigned int port)
+{
+	char port_buffer[20];
+	
+	if (conState == WL_UNINIT || conState == WL_DISCONNECTED)
+		return false;
+	
+	mySerial.flushInput();
+	mySerial.setTimeout(NORMAL_COMMAND_RESP_MS);
+	if (!safePrint(F("AT+CIPSTART=\"TCP\",\"")))
+		return false;
+	if (!safePrint(host))
+		return false;
+	if (!safePrint(F("\",")))
+		return false;
+	sprintf(port_buffer, "%d", port);
+	if (!safePrint(port_buffer, true))
+		return false;
+	
+	mySerial.setTimeout(WAIT_CONNECTION_MS);
+	
+	if (!find(F("\r\nOK"), true))
+		return false;
+	
+	if (!find(F("Linked"), true))
+		return false;
+	
+	return true;
 }
 
 ESP8266ClientClass wifi;
