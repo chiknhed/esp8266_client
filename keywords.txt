@@ -16,6 +16,7 @@ begin KEYWORD2
 checkAp KEYWORD2
 status KEYWORD2
 isConnected KEYWORD2
+disconnect KEYWORD2
 println KEYWORD2
 print KEYWORD2
 startScan KEYWORD2

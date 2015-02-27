@@ -268,4 +268,38 @@ bool ESP8266ClientClass::connect(char * host, unsigned int port)
 	return true;
 }
 
+bool ESP8266ClientClass::isConnected(void)
+{
+	if (conState == WL_UNINIT || conState == WL_DISCONNECTED)
+		return false;
+	
+	mySerial.flushInput();
+	mySerial.setTimeout(NORMAL_COMMAND_RESP_MS);
+	if (!safePrint(F("AT+CIPSTART=?"), true))
+		return false;
+	if (!find(F("+CIPSTART:")))
+		return false;
+			
+	return true;
+}
+
+void ESP8266ClientClass::disconnect(void)
+{
+	if (conState == WL_UNINIT || conState == WL_DISCONNECTED)
+		goto out;
+	
+	mySerial.flushInput();
+	mySerial.setTimeout(NORMAL_COMMAND_RESP_MS);
+	
+	if (!safePrint(F("AT+CIPCLOSE"), true))
+		goto out;
+	if (!find(F("OK"), true))
+		goto out;
+	find(F("UNLINK"), true);
+	
+out:
+	delay(10);
+	mySerial.flushInput();
+}
+
 ESP8266ClientClass wifi;

@@ -41,6 +41,7 @@ class ESP8266ClientClass
 		wl_status_t status(void);
 		bool connect(char * host, unsigned int port);
 		bool isConnected(void);
+		void disconnect(void);
 		void println(char * buffer);
 		void print(char * buffer);
 		void println(const __FlashStringHelper *ifsh);
