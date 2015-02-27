@@ -1,0 +1,28 @@
+#######################################
+# Syntax Coloring Map For SharpDust
+#######################################
+
+#######################################
+# Datatypes (KEYWORD1)
+#######################################
+
+wifi KEYWORD1
+
+#######################################
+# Methods and Functions (KEYWORD2)
+#######################################
+
+begin KEYWORD2
+connectAp KEYWORD2
+checkAp KEYWORD2
+connect KEYWORD2
+isConnected KEYWORD2
+println KEYWORD2
+print KEYWORD2
+startScan KEYWORD2
+scanEntry KEYWORD2
+
+#######################################
+# Constants (LITERAL1)
+#######################################
+
