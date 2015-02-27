@@ -13,16 +13,22 @@ wifi KEYWORD1
 #######################################
 
 begin KEYWORD2
-connectAp KEYWORD2
 checkAp KEYWORD2
-connect KEYWORD2
+status KEYWORD2
 isConnected KEYWORD2
 println KEYWORD2
 print KEYWORD2
 startScan KEYWORD2
 scanEntry KEYWORD2
+readBytes KEYWORD2
 
 #######################################
 # Constants (LITERAL1)
 #######################################
 
+WIFI_SSID_LENGTH	LITERAL1
+WIFI_PASSWORD_LENGTH	LITERAL1
+WIFI_SECURITY_OPEN		LITERAL1
+WIFI_SECURITY_WEP		LITERAL1
+WIFI_SECURITY_WPA1		LITERAL1
+WIFI_SECURITY_WPA2		LITERAL1
