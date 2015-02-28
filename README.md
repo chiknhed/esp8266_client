@@ -1,4 +1,4 @@
-# Arduino library for Sharp GP2Y1010AU sensor
+# Arduino library for ESP8266 (Client only)
 
 This is a very simple library for ESP8266 module from Ai-Thinker
 
