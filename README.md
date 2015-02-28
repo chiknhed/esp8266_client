@@ -45,3 +45,21 @@ SDK version:0.9.5
 
 - on the module itself and HW configuration : http://forum.hobbycomponents.com/viewtopic.php?f=74&t=1777
 - Espressif page : https://espressif.com/
+
+## public API list
+
+ESP8266ClientClass();
+wl\_status\_t begin(char * ssid = NULL, char * password = NULL, byte * mac = NULL);
+wl\_status\_t status(void);
+bool connect(char * host, unsigned int port);
+bool isConnected(void);
+void disconnect(void);
+void print(char * buffer);
+void print(const __FlashStringHelper *ifsh);
+void readLoop(void);
+void setTimeout(long timeout);
+byte readBytes(char* buffer, byte buffer_size);
+bool startScan(void);
+bool scanEntry(char * ssid, char * rssi, byte *security);
+void getMac(byte mac[6]);
+
