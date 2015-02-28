@@ -7,12 +7,14 @@
 #define FIND_PEEK_DELAY_MS	5
 #define WAIT_CONNECTION_MS	10000
 #define NORMAL_COMMAND_RESP_MS	100
-#define WAIT_SEND_MS	2000
+#define WAIT_SEND_MS	3000
 
 
 ESP8266ClientClass::ESP8266ClientClass(void)
 {
 	conState = WL_UNINIT;
+	remainingBytes = 0;
+	timeout = 1000;
 }
 
 bool ESP8266ClientClass::safePrint(char * buffer, bool line)
@@ -24,7 +26,7 @@ bool ESP8266ClientClass::safePrint(char * buffer, bool line)
 	
 	mySerial.flushOutput();
 
-	return find(buffer, line);	
+	return find(buffer);	
 }
 
 bool ESP8266ClientClass::safePrint(const __FlashStringHelper *ifsh, bool line)
@@ -36,30 +38,56 @@ bool ESP8266ClientClass::safePrint(const __FlashStringHelper *ifsh, bool line)
 	
 	mySerial.flushOutput();
 	
-	return find(ifsh, line);	
+	return find(ifsh);	
 }
 
-bool ESP8266ClientClass::find(char * buffer, bool line)
+bool ESP8266ClientClass::find(char * buffer)
 {
 	char peekValue;
+	byte i;
 	
-	if (!mySerial.find(buffer))
-		return false;
-	
-	if (!line)
-		return true;
-	
-	delay(FIND_PEEK_DELAY_MS);
-	while (mySerial.peek() == '\n' || mySerial.peek() == '\r') {
-		char c;
-		mySerial.readBytes(&c, 1);
-		delay(FIND_PEEK_DELAY_MS);
+	i = 0;
+	while(true) {
+		unsigned char inChar;
+		unsigned char myChar;
+		
+		myChar = buffer[i];
+		while (myChar == '\n' || myChar == '\r') {
+			i += 1;
+			myChar = buffer[i];
+		}
+		if (myChar == 0)
+			break;
+		byte readBytes = mySerial.readBytes(&inChar, 1);
+		while (inChar == '\n' || inChar == '\r') {
+			readBytes = mySerial.readBytes(&inChar, 1);
+		}
+#if 0
+		Serial.print(myChar, HEX);Serial.print(" ");
+		Serial.print(inChar, HEX);Serial.print(" ");
+#endif
+			
+		if (!readBytes || myChar != inChar) {
+			Serial.println("readbytes:");
+			Serial.println(readBytes);
+			return false;
+		}
+		
+		i++;
 	}
 	
+	while (true) {
+		char c = mySerial.peek();
+		if (c != '\n' && c != '\r')
+			break;
+		mySerial.readBytes(&c, 1);
+		delay(FIND_PEEK_DELAY_MS);
+	}	
+		
 	return true;
 }
 
-bool ESP8266ClientClass::find(const __FlashStringHelper *ifsh, bool line)
+bool ESP8266ClientClass::find(const __FlashStringHelper *ifsh)
 {
 	const char PROGMEM *p = (const char PROGMEM *) ifsh;
 	char peekValue;
@@ -70,33 +98,36 @@ bool ESP8266ClientClass::find(const __FlashStringHelper *ifsh, bool line)
 		unsigned char inChar;
 		unsigned char myChar;
 		myChar = pgm_read_byte_near(p + i);
+		
+		while (myChar == '\n' || myChar == '\r') {
+			i += 1;
+			myChar = pgm_read_byte_near(p + i);
+		}
 		if (myChar == 0)
 			break;
 		byte readBytes = mySerial.readBytes(&inChar, 1);
-
-#if 1
-		Serial.print(myChar);Serial.print(" ");
-		Serial.print(inChar);Serial.print(" ");
+		while (inChar == '\n' || inChar == '\r') {
+			readBytes = mySerial.readBytes(&inChar, 1);
+		}
+#if 0
+		Serial.print(myChar, HEX);Serial.print(" ");
+		Serial.print(inChar, HEX);Serial.print(" ");
 #endif
-			
 		if (!readBytes || myChar != inChar) {
-			
 			return false;
 		}
 		
 		i++;
 	}
 	
-	if (!line)
-		return true;
-	
-	delay(FIND_PEEK_DELAY_MS);
-	while (mySerial.peek() == '\n' || mySerial.peek() == '\r') {
-		char c;
+	while (true) {
+		char c = mySerial.peek();
+		if (c != '\n' && c != '\r')
+			break;
 		mySerial.readBytes(&c, 1);
 		delay(FIND_PEEK_DELAY_MS);
-	}
-		
+	}	
+			
 	return true;
 }
 
@@ -106,19 +137,18 @@ bool ESP8266ClientClass::ping(void)
 	mySerial.setTimeout(1000);
 	
 	safePrint("AT", true);
-	if (!find(F("OK"), true)) {
+	if (!find(F("OK"))) {
 		return false;
 	}
 	return true;
 }
 
-bool ESP8266ClientClass::waitInit(void)
+bool ESP8266ClientClass::waitString(char *buffer)
 {
-	char * readyString = "ready\r\n";
 	char * readyChar;
 	
 	mySerial.setTimeout(WAIT_INIT_MS);
-	readyChar = readyString;
+	readyChar = buffer;
 	while (true) {
 		char inChar;
 		byte readBytes = mySerial.readBytes(&inChar, 1);
@@ -132,13 +162,13 @@ bool ESP8266ClientClass::waitInit(void)
 			if (*readyChar == 0)
 				break;
 		} else {
-			readyChar = readyString;
+			readyChar = buffer;
 		}
 	}
 	
 	delay(50);
 	
-	return ping();
+	return true;
 }
 
 void ESP8266ClientClass::normalizePasswd(char * input, char * normalized)
@@ -170,7 +200,7 @@ wl_status_t ESP8266ClientClass::begin(char * ssid, char * passwd)
 	trial = 0;
 	while(conState == WL_UNINIT) {
 		mySerial.println(F("AT+RST"));
-		if (waitInit()) {
+		if (waitString("ready\r\n") && ping()) {
 			conState = WL_DISCONNECTED;
 			break;
 		}
@@ -214,7 +244,7 @@ wl_status_t ESP8266ClientClass::begin(char * ssid, char * passwd)
 		return conState;
 	mySerial.flushInput();
 	mySerial.setTimeout(AP_WAIT_MS);
-	if (!find(F("\r\nOK"), true))
+	if (!find(F("OK")))
 		return conState;
 		
 	conState = WL_CONNECTED;
@@ -228,13 +258,14 @@ wl_status_t ESP8266ClientClass::status(void)
 		return conState;
 	
 	mySerial.flushInput();
+	mySerial.setTimeout(NORMAL_COMMAND_RESP_MS);
 	safePrint(F("AT+CWJAP?"), true);
 	if (!find(F("+CWJAP:"))) {
-		delay(10);
+		delay(NORMAL_COMMAND_RESP_MS);
 		mySerial.flushInput();
 		conState = WL_DISCONNECTED;
 	} else {
-		delay(10);
+		delay(NORMAL_COMMAND_RESP_MS);
 		mySerial.flushInput();
 		conState = WL_CONNECTED;
 	}
@@ -263,10 +294,10 @@ bool ESP8266ClientClass::connect(char * host, unsigned int port)
 	
 	mySerial.setTimeout(WAIT_CONNECTION_MS);
 	
-	if (!find(F("\r\nOK"), true))
+	if (!find(F("OK")))
 		goto out;
 	
-	if (!find(F("Linked"), true))
+	if (!find(F("Linked")))
 		goto out;
 	
 	return true;
@@ -309,18 +340,20 @@ void ESP8266ClientClass::disconnect(void)
 	
 	if (!safePrint(F("AT+CIPCLOSE"), true))
 		goto out;
-	if (!find(F("OK"), true))
+	if (!find(F("OK")))
 		goto out;
-	find(F("UNLINK"), true);
+	find(F("UNLINK"));
 	
 out:
 	delay(10);
 	mySerial.flushInput();
 }
 
-void ESP8266ClientClass::sockprint(char * buffer)
+void ESP8266ClientClass::print(char * buffer)
 {
 	char len_buffer[10];
+	
+	delay(30);
 	
 	if (conState == WL_UNINIT || conState == WL_DISCONNECTED)
 		return;
@@ -332,40 +365,37 @@ void ESP8266ClientClass::sockprint(char * buffer)
 		goto out;
 	
 	sprintf(len_buffer, "%d", strlen(buffer));
-	Serial.println("hello");
-	Serial.println(len_buffer);
-	Serial.println(buffer);
 	if(!safePrint((char*)len_buffer, true))
 		goto out;
 	if(!find(F(">")))
 		goto out;
 	
-	if(!safePrint(buffer))
-		goto out;
-	if(!safePrint(F(""), true))
-		goto out;
-	if(!find(F("SEND OK"), true))
+	if(!find(F(" ")))		/* I don't know why do we need this */
 		goto out;
 	
-	delay(20);
+	if(!safePrint(buffer)) {
+		goto out;
+	}
+	
+	if(!find(F("SEND OK")))
+		goto out;
 	
 	return;
 
 out:
+	readLoop(); //okkwon debug
 	delay(500);
 	mySerial.flushInput();
 }
 
-void ESP8266ClientClass::sockprint(const __FlashStringHelper *ifsh)
+void ESP8266ClientClass::print(const __FlashStringHelper *ifsh)
 {
-	char cbuffer[2];
+	char cbuffer[21];
 	const char PROGMEM *p = (const char PROGMEM *) ifsh;
 	int i;
 	
 	if (conState == WL_UNINIT || conState == WL_DISCONNECTED)
 		return;
-	
-	Serial.println("f path");
 	
 	mySerial.flushInput();
 	mySerial.setTimeout(WAIT_SEND_MS);
@@ -373,11 +403,69 @@ void ESP8266ClientClass::sockprint(const __FlashStringHelper *ifsh)
 	cbuffer[1] = 0;
 	i = 0;
 	while(true) {
-		cbuffer[0] = pgm_read_byte_near(p + i);
-		if (cbuffer[0] == 0) break;
-		sockprint(cbuffer);
+		char c = pgm_read_byte_near(p + i);
+		cbuffer[i%20] = c;
+		cbuffer[i%20+1] = 0;
+		if (c == 0) {
+			if (i%20)
+				print(cbuffer);
+			break;
+		}
+		if (i%20 == 19) {
+			print(cbuffer);
+		}
 		i++;
 	}
 }
 
+void ESP8266ClientClass::readLoop(void)
+{
+	while (true) {
+		char c;
+		byte rb = mySerial.readBytes(&c, 1);
+		
+		if (rb) {
+			//Serial.write(c);
+		}
+	}
+}
+
+void ESP8266ClientClass::setTimeout(long to)
+{
+	timeout = to;
+}
+
+byte ESP8266ClientClass::readBytes(char* buffer, byte buffer_size)
+{
+	char c;
+	byte rb;
+	
+	mySerial.setTimeout(timeout);
+	
+	if (remainingBytes == 0) {
+		if(!waitString("+IPD,")) {
+			return 0;
+		}
+		
+		remainingBytes = 0;
+		while(mySerial.readBytes(&c, 1)) {
+			if (c == ':') {
+				break;
+			}
+			remainingBytes *= 10;
+			remainingBytes += c - '0';			
+		}
+	}
+	
+	rb = mySerial.readBytes(buffer, buffer_size - 1);
+	if (rb >= remainingBytes) {
+		rb = remainingBytes;
+		mySerial.flushInput();
+	}
+	remainingBytes -= rb;
+	buffer[rb] = 0;
+	
+	return rb;
+}
+		
 ESP8266ClientClass wifi;

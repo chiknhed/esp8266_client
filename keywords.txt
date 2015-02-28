@@ -17,10 +17,11 @@ checkAp KEYWORD2
 status KEYWORD2
 isConnected KEYWORD2
 disconnect KEYWORD2
-sockprint KEYWORD2
+print KEYWORD2
 startScan KEYWORD2
 scanEntry KEYWORD2
-tcpreadBytes KEYWORD2
+setTimeout KEYWORD2
+readBytes KEYWORD2
 
 #######################################
 # Constants (LITERAL1)

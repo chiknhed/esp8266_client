@@ -26,14 +26,16 @@ class ESP8266ClientClass
 {
 	private:
 		AltSoftSerial mySerial;
+		int remainingBytes;
+		long timeout;
 		bool ping(void);
-		bool find(const __FlashStringHelper *ifsh, bool line = false);
-		bool find(char * buffer, bool line = false);
-		bool waitInit(void);
+		bool find(const __FlashStringHelper *ifsh);
+		bool find(char * buffer);
 		wl_status_t conState;
 		void normalizePasswd(char * input, char * normalized);
 		bool safePrint(char * buffer, bool line = false);
 		bool safePrint(const __FlashStringHelper *ifsh, bool line = false);
+		bool waitString(char *buffer);
 		
 	public:
 		ESP8266ClientClass();
@@ -42,14 +44,14 @@ class ESP8266ClientClass
 		bool connect(char * host, unsigned int port);
 		bool isConnected(void);
 		void disconnect(void);
-		void sockprint(char * buffer);
-		void sockprint(const __FlashStringHelper *ifsh);
-		void sockprintln(char * buffer);
-		void sockprintln(const __FlashStringHelper *ifsh);
+		void print(char * buffer);
+		void print(const __FlashStringHelper *ifsh);
+		void readLoop(void);
+		void setTimeout(long timeout);
+		byte readBytes(char* buffer, byte buffer_size);
 #if 0
 		void startScan(void);
 		bool scanEntry(char * ssid, char * rssi, int *security);
-		size_t read(char * buffer, size_t bufferSize);
 #endif
 };
 
