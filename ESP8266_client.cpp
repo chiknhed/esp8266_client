@@ -9,6 +9,7 @@
 #define NORMAL_COMMAND_RESP_MS	100
 #define WAIT_SEND_MS	3000
 
+//#define EXPECT_DBG
 
 ESP8266ClientClass::ESP8266ClientClass(void)
 {
@@ -62,7 +63,7 @@ bool ESP8266ClientClass::find(char * buffer)
 		while (inChar == '\n' || inChar == '\r') {
 			readBytes = mySerial.readBytes(&inChar, 1);
 		}
-#if 0
+#ifdef EXPECT_DBG
 		Serial.print(myChar, HEX);Serial.print(" ");
 		Serial.print(inChar, HEX);Serial.print(" ");
 #endif
@@ -109,7 +110,7 @@ bool ESP8266ClientClass::find(const __FlashStringHelper *ifsh)
 		while (inChar == '\n' || inChar == '\r') {
 			readBytes = mySerial.readBytes(&inChar, 1);
 		}
-#if 0
+#ifdef EXPECT_DBG
 		Serial.print(myChar, HEX);Serial.print(" ");
 		Serial.print(inChar, HEX);Serial.print(" ");
 #endif
@@ -134,7 +135,7 @@ bool ESP8266ClientClass::find(const __FlashStringHelper *ifsh)
 bool ESP8266ClientClass::ping(void)
 {
 	mySerial.flushInput();
-	mySerial.setTimeout(1000);
+	mySerial.setTimeout(NORMAL_COMMAND_RESP_MS);
 	
 	safePrint("AT", true);
 	if (!find(F("OK"))) {
@@ -188,7 +189,7 @@ void ESP8266ClientClass::normalizePasswd(char * input, char * normalized)
 	normalized[o] = 0;
 }
 
-wl_status_t ESP8266ClientClass::begin(char * ssid, char * passwd)
+wl_status_t ESP8266ClientClass::begin(char * ssid, char * passwd, byte * mac)
 {
 	byte trial;
 	char buffer[WIFI_PASSWORD_LENGTH + 10];
@@ -201,12 +202,16 @@ wl_status_t ESP8266ClientClass::begin(char * ssid, char * passwd)
 	
 	trial = 0;
 	while(conState == WL_UNINIT) {
-		mySerial.println(F("AT+RST"));
-		if (waitString("ready\r\n") && ping()) {
+		mySerial.setTimeout(NORMAL_COMMAND_RESP_MS);
+		if(ping()) {
 			conState = WL_DISCONNECTED;
 			break;
 		}
 		
+		mySerial.setTimeout(WAIT_INIT_MS);		
+		mySerial.println(F("AT+RST"));
+		waitString("ready\r\n");
+				
 		trial ++;
 		if (trial == 3) {
 			conState = WL_UNINIT;
@@ -218,9 +223,29 @@ wl_status_t ESP8266ClientClass::begin(char * ssid, char * passwd)
 		return conState;
 	}
 	
-	conState = WL_DISCONNECTED;
-		
+	mySerial.setTimeout(WAIT_INIT_MS);
+	
 	delay(500);
+	
+	/* unnecessary routine */
+#if 0
+	if (mac) {
+		/* set the mac */
+		char mac_buffer[20];
+		
+		sprintf(mac_buffer, "\"%2.2x:%2.2x:%2.2x:%2.2x:%2.2x:%2.2x\"",
+				mac[0], mac[1], mac[2],
+				mac[3], mac[4], mac[5]);
+		
+		if (!safePrint(F("AT+CIPSTAMAC=")))
+			return conState;
+		if (!safePrint(mac_buffer, true))
+			return conState;
+		if (!find(F("OK")))
+			return conState;		
+	}
+#endif
+	conState = WL_DISCONNECTED;
 	if (!ssid)
 		return conState;
 		
@@ -283,7 +308,7 @@ bool ESP8266ClientClass::connect(char * host, unsigned int port)
 		return false;
 	
 	mySerial.flushInput();
-	mySerial.setTimeout(NORMAL_COMMAND_RESP_MS);
+	mySerial.setTimeout(WAIT_CONNECTION_MS);
 	if (!safePrint(F("AT+CIPSTART=\"TCP\",\"")))
 		goto out;
 	if (!safePrint(host))
@@ -294,17 +319,16 @@ bool ESP8266ClientClass::connect(char * host, unsigned int port)
 	if (!safePrint(port_buffer, true))
 		goto out;
 	
-	mySerial.setTimeout(WAIT_CONNECTION_MS);
-	
-	if (!find(F("OK")))
+	if (!find(F("CONNECT")))
 		goto out;
 	
-	if (!find(F("Linked")))
+	if (!find(F("OK")))
 		goto out;
 	
 	return true;
 	
 out:
+	readLoop();
 	delay(100);
 	mySerial.flushInput();
 	return false;
@@ -369,6 +393,10 @@ void ESP8266ClientClass::print(char * buffer)
 	sprintf(len_buffer, "%d", strlen(buffer));
 	if(!safePrint((char*)len_buffer, true))
 		goto out;
+	
+	if(!find(F("OK")))
+		return;
+	
 	if(!find(F(">")))
 		goto out;
 	
@@ -422,13 +450,16 @@ void ESP8266ClientClass::print(const __FlashStringHelper *ifsh)
 
 void ESP8266ClientClass::readLoop(void)
 {
+	mySerial.setTimeout(0);
+	Serial.setTimeout(0);
 	while (true) {
 		char c;
 		byte rb = mySerial.readBytes(&c, 1);
+		
+		rb = Serial.readBytes(&c, 1);
+		if (rb)
+			mySerial.write(c);
 
-		if (rb) {
-			//Serial.write(c);
-		}
 	}
 }
 
@@ -459,13 +490,12 @@ byte ESP8266ClientClass::readBytes(char* buffer, byte buffer_size)
 		}
 	}
 	
-	rb = mySerial.readBytes(buffer, buffer_size - 1);
+	rb = mySerial.readBytes(buffer, buffer_size);
 	if (rb >= remainingBytes) {
 		rb = remainingBytes;
 		mySerial.flushInput();
 	}
 	remainingBytes -= rb;
-	buffer[rb] = 0;
 	
 	return rb;
 }
@@ -529,5 +559,30 @@ out:
 	conState = WL_UNINIT;	/* reset after scanning -_-; */
 	return false;
 }
-		
+
+void ESP8266ClientClass::getMac(byte mac[6])
+{
+	/* we assume that we already begun */
+	char buffer[20];
+	byte rb;
+	
+	mySerial.flushInput();
+	mySerial.setTimeout(WAIT_INIT_MS);
+	
+	if (!safePrint(F("AT+CIPSTAMAC?"), true))
+		return;
+	
+	if (!find(F("+CIPSTAMAC:")))
+		return;
+	
+	rb = mySerial.readBytesUntil('\r', buffer, 20);
+	buffer[rb] = 0;
+	
+	sscanf(buffer, "\"%x:%x:%x:%x:%x:%x\"", &mac[0], &mac[1], &mac[2],
+				&mac[3], &mac[4], &mac[5]);
+				
+	sscanf(buffer, "%x:%x:%x:%x:%x:%x", mac[0], mac[1], mac[2], mac[3], mac[4], mac[5]);
+	Serial.println(buffer);
+}
+
 ESP8266ClientClass wifi;

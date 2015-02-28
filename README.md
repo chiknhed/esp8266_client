@@ -6,6 +6,7 @@ This is a very simple library for ESP8266 module from Ai-Thinker
 
 - Unstable yet
 - Dependent on AltSoftSerial library. I had to patch AltSoftSerial library to modify peek function and increase RX buffer somewhat.
+- You'd better to use 116200 for HW Serial to don't become bottleneck for SoftSerial (I tested with 116200 usually)
 
 
 ## Hardware configuration tested
