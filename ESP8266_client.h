@@ -39,7 +39,7 @@ class ESP8266ClientClass
 		
 	public:
 		ESP8266ClientClass();
-		wl_status_t begin(char * ssid, char * password = NULL);
+		wl_status_t begin(char * ssid = NULL, char * password = NULL);
 		wl_status_t status(void);
 		bool connect(char * host, unsigned int port);
 		bool isConnected(void);
@@ -49,10 +49,8 @@ class ESP8266ClientClass
 		void readLoop(void);
 		void setTimeout(long timeout);
 		byte readBytes(char* buffer, byte buffer_size);
-#if 0
-		void startScan(void);
-		bool scanEntry(char * ssid, char * rssi, int *security);
-#endif
+		bool startScan(void);
+		bool scanEntry(char * ssid, char * rssi, byte *security);
 };
 
 extern ESP8266ClientClass wifi;

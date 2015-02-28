@@ -5,7 +5,7 @@ This is a very simple library for ESP8266 module from Ai-Thinker
 ## precondition
 
 - Very unstabl yet
-- Should be controlled with AltSoftSerial library. I had to patch AltSoftSerial library to modify peek function and increase RX buffer somewhat.
+- Dependent on AltSoftSerial library. I had to patch AltSoftSerial library to modify peek function and increase RX buffer somewhat.
 
 ## Hardware configuration tested
 

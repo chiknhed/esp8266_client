@@ -3,7 +3,7 @@
 #include <avr/pgmspace.h>
 
 #define WAIT_INIT_MS	5000
-#define AP_WAIT_MS		10000
+#define AP_WAIT_MS		20000
 #define FIND_PEEK_DELAY_MS	5
 #define WAIT_CONNECTION_MS	10000
 #define NORMAL_COMMAND_RESP_MS	100
@@ -196,6 +196,8 @@ wl_status_t ESP8266ClientClass::begin(char * ssid, char * passwd)
 	mySerial.begin(9600);
 	
 	delay(1000);
+	mySerial.setTimeout(WAIT_INIT_MS);
+	mySerial.flushInput();
 	
 	trial = 0;
 	while(conState == WL_UNINIT) {
@@ -217,17 +219,18 @@ wl_status_t ESP8266ClientClass::begin(char * ssid, char * passwd)
 	}
 	
 	conState = WL_DISCONNECTED;
-	
+		
 	delay(500);
-	
-	mySerial.setTimeout(500);
-	
+	if (!ssid)
+		return conState;
+		
 	/* set mode to STA */
 	mySerial.println(F("AT+CWMODE=1"));
 	delay(500);
 	mySerial.flushInput();
 		
 	/* connect to the AP */
+	mySerial.setTimeout(AP_WAIT_MS);
 	if (!safePrint(F("AT+CWJAP=\"")))
 		return conState;
 	if (!safePrint(ssid))
@@ -243,7 +246,6 @@ wl_status_t ESP8266ClientClass::begin(char * ssid, char * passwd)
 	if (!safePrint(F("\""), true))
 		return conState;
 	mySerial.flushInput();
-	mySerial.setTimeout(AP_WAIT_MS);
 	if (!find(F("OK")))
 		return conState;
 		
@@ -383,7 +385,7 @@ void ESP8266ClientClass::print(char * buffer)
 	return;
 
 out:
-	readLoop(); //okkwon debug
+	//readLoop(); //okkwon debug
 	delay(500);
 	mySerial.flushInput();
 }
@@ -423,7 +425,7 @@ void ESP8266ClientClass::readLoop(void)
 	while (true) {
 		char c;
 		byte rb = mySerial.readBytes(&c, 1);
-		
+
 		if (rb) {
 			//Serial.write(c);
 		}
@@ -466,6 +468,66 @@ byte ESP8266ClientClass::readBytes(char* buffer, byte buffer_size)
 	buffer[rb] = 0;
 	
 	return rb;
+}
+
+bool ESP8266ClientClass::startScan(void)
+{
+	delay(100);
+	mySerial.setTimeout(NORMAL_COMMAND_RESP_MS);
+	mySerial.flushInput();
+	
+	if (!safePrint(F("AT+CWLAP=\"\",\"\""), true))
+		return false;
+	
+	while (!mySerial.available()) {
+		delay(100);
+	}
+	
+	return true;
+}
+
+bool ESP8266ClientClass::scanEntry(char * ssid, char * rssi, byte *security)
+{
+	char c;
+	byte rb;
+	char buffer[30];
+	
+	mySerial.setTimeout(NORMAL_COMMAND_RESP_MS);
+	if (!find(F("+CWLAP:(")))
+		goto out;
+	
+	rb = mySerial.readBytes(&c, 1);
+	*security = c - '0';
+	if (*security == 4) *security = 3;
+	
+	if (!find(F(",\"")))
+		goto out;
+	
+	rb = mySerial.readBytesUntil('\"', ssid, WIFI_SSID_LENGTH);
+	ssid[rb] = 0;
+	
+	if (!find(F(",-")))
+		goto out;
+	
+	*rssi = 0;
+	while (true) {
+		rb = mySerial.readBytes(&c, 1);
+		if (c <= '9' && c >= '0') {
+			*rssi *= 10;
+			*rssi += c - '0';
+		} else {
+			break;
+		}
+	}
+	*rssi = -*rssi;
+	
+	mySerial.readBytesUntil('\n', buffer, 30);
+	
+	return true;
+	
+out:
+	conState = WL_UNINIT;	/* reset after scanning -_-; */
+	return false;
 }
 		
 ESP8266ClientClass wifi;
