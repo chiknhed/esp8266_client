@@ -1,0 +1,64 @@
+diff --git a/AltSoftSerial.cpp b/AltSoftSerial.cpp
+index bc752d5..7377105 100644
+--- a/AltSoftSerial.cpp
++++ b/AltSoftSerial.cpp
+@@ -54,7 +54,7 @@ static uint8_t tx_byte;
+ static uint8_t tx_bit;
+ static volatile uint8_t tx_buffer_head;
+ static volatile uint8_t tx_buffer_tail;
+-#define TX_BUFFER_SIZE 68
++#define TX_BUFFER_SIZE 38
+ static volatile uint8_t tx_buffer[TX_BUFFER_SIZE];
+ 
+ 
+@@ -62,6 +62,8 @@ static volatile uint8_t tx_buffer[TX_BUFFER_SIZE];
+ #define INPUT_PULLUP INPUT
+ #endif
+ 
++//#define OKKWON_DEBUG
++
+ void AltSoftSerial::init(uint32_t cycles_per_bit)
+ {
+ 	if (cycles_per_bit < 7085) {
+@@ -108,7 +110,7 @@ void AltSoftSerial::writeByte(uint8_t b)
+ 	uint8_t intr_state, head;
+ 
+ 	delay(1);
+-#if 0
++#ifdef OKKWON_DEBUG
+ 	char temp[2];
+ 	temp[0] = b;
+ 	temp[1] = 0;
+@@ -284,7 +286,7 @@ int AltSoftSerial::read(void)
+ 	out = rx_buffer[tail];
+ 	rx_buffer_tail = tail;
+ 
+-#if 0
++#ifdef OKKWON_DEBUG
+ 	char temp[2];
+ 	temp[0] = out;
+ 	temp[1] = 0;
+@@ -301,7 +303,10 @@ int AltSoftSerial::peek(void)
+ 	head = rx_buffer_head;
+ 	tail = rx_buffer_tail;
+ 	if (head == tail) return -1;
+-	return rx_buffer[tail];
++	if (tail + 1 < RX_BUFFER_SIZE)
++		return rx_buffer[tail+1];
++	else
++		return rx_buffer[0];
+ }
+ 
+ int AltSoftSerial::available(void)
+diff --git a/config/AltSoftSerial_Boards.h b/config/AltSoftSerial_Boards.h
+index 9a3e36f..1ccbf68 100644
+--- a/config/AltSoftSerial_Boards.h
++++ b/config/AltSoftSerial_Boards.h
+@@ -83,6 +83,7 @@
+ // Arduino Uno, Duemilanove, LilyPad, etc
+ //
+ #elif defined(__AVR_ATmega168__) || defined(__AVR_ATmega328P__)
++
+  #define ALTSS_USE_TIMER1
+  #define INPUT_CAPTURE_PIN		 8 // receive
+  #define OUTPUT_COMPARE_A_PIN		 9 // transmit
