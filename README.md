@@ -4,8 +4,9 @@ This is a very simple library for ESP8266 module from Ai-Thinker
 
 ## precondition
 
-- Very unstabl yet
+- Unstable yet
 - Dependent on AltSoftSerial library. I had to patch AltSoftSerial library to modify peek function and increase RX buffer somewhat.
+
 
 ## Hardware configuration tested
 
@@ -16,12 +17,15 @@ ESP8266mod module from Ai-Thinker (http://forum.hobbycomponents.com/viewtopic.ph
 
 - AP connection
 - TCP connection (single)
+- AP Scan
 
 ## ToDo
 
 - detailed HW configuration guide (reference)
+- more stable connection
+- corner-case handling
 - ~~add modified AltSoftSerial library patch~~
-- Scan functionality
+- ~~Scan functionality~~
 - ~~Ap connection~~
 - ~~TCP connection (single)~~
 
