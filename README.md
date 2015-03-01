@@ -48,6 +48,7 @@ SDK version:0.9.5
 
 ## public API list
 
+```
 ESP8266ClientClass();
 wl\_status\_t begin(char * ssid = NULL, char * password = NULL, byte * mac = NULL);
 wl\_status\_t status(void);
@@ -62,4 +63,4 @@ byte readBytes(char* buffer, byte buffer_size);
 bool startScan(void);
 bool scanEntry(char * ssid, char * rssi, byte *security);
 void getMac(byte mac[6]);
-
+```
