@@ -50,8 +50,8 @@ SDK version:0.9.5
 
 ```
 ESP8266ClientClass();
-wl\_status\_t begin(char * ssid = NULL, char * password = NULL, byte * mac = NULL);
-wl\_status\_t status(void);
+wl_status_t begin(char * ssid = NULL, char * password = NULL, byte * mac = NULL);
+wl_status_t status(void);
 bool connect(char * host, unsigned int port);
 bool isConnected(void);
 void disconnect(void);
