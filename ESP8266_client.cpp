@@ -580,9 +580,6 @@ void ESP8266ClientClass::getMac(byte mac[6])
 	
 	sscanf(buffer, "\"%x:%x:%x:%x:%x:%x\"", &mac[0], &mac[1], &mac[2],
 				&mac[3], &mac[4], &mac[5]);
-				
-	sscanf(buffer, "%x:%x:%x:%x:%x:%x", mac[0], mac[1], mac[2], mac[3], mac[4], mac[5]);
-	Serial.println(buffer);
 }
 
 ESP8266ClientClass wifi;

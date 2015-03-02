@@ -23,7 +23,6 @@ scanEntry KEYWORD2
 setTimeout KEYWORD2
 readBytes KEYWORD2
 getMac KEYWORD2
-available KEYWORD2
 
 #######################################
 # Constants (LITERAL1)
