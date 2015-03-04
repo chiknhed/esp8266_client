@@ -6,8 +6,9 @@
 #define AP_WAIT_MS		20000
 #define FIND_PEEK_DELAY_MS	5
 #define WAIT_CONNECTION_MS	10000
-#define NORMAL_COMMAND_RESP_MS	100
+#define NORMAL_COMMAND_RESP_MS	200
 #define WAIT_SEND_MS	3000
+#define PING_WAIT_MS	1000
 
 //#define EXPECT_DBG
 
@@ -135,7 +136,7 @@ bool ESP8266ClientClass::find(const __FlashStringHelper *ifsh)
 bool ESP8266ClientClass::ping(void)
 {
 	mySerial.flushInput();
-	mySerial.setTimeout(NORMAL_COMMAND_RESP_MS);
+	mySerial.setTimeout(PING_WAIT_MS);
 	
 	safePrint("AT", true);
 	if (!find(F("OK"))) {
