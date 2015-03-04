@@ -4,7 +4,7 @@ This is a very simple library for ESP8266 module from Ai-Thinker
 
 ## precondition
 
-- ~~Quite stable now~~ -> There's unknown reset after days of test. May be current issue? or a bug?
+- ~~Quite stable now~~ -> There's unknown reset after days of test. May be current issue? or a bug? (I used 3.3v output from FTDI with Arduino Pro Mini 3.3V, so current issue is strongly suspected)
 - Dependent on AltSoftSerial library. I had to patch AltSoftSerial library to modify peek function and increase RX buffer somewhat.
 - You'd better to use 115200 for HW Serial to don't become bottleneck for SoftSerial (I tested with 115200 usually)
 - AltSoftSerial (connected to ESP8266) works as 9600bps
