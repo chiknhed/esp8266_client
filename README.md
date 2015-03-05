@@ -20,6 +20,20 @@ This is a very simple library for ESP8266 module from Ai-Thinker
 - ESP8266 TXD -> Pro Mini D8
 - ESP8266 RXD -> Pro Mini D9
 
+## How did I flash my Module
+
+- Download SDK from Espressif page : http://bbs.espressif.com/viewtopic.php?f=5&t=154
+- Download Flash program for Espressif page : http://bbs.espressif.com/viewtopic.php?f=7&t=25&p=70&hilit=FLASH_DOWNLOAD_TOOLS_v0.9.3.1_141118#p70
+- Flash by "new firmware" instruction at esp\_iot\_sdk\_v0.9.5\_15\_01\_23/esp\_iot\_sdk\_v0.9.5/bin/at/readme.txt
+- Run the following AT commands with FTDI connection to ESP8266
+```
+AT+CWMODE=1
+AT+RST
+AT+CWJAP="leekwon2G","xnvkdlqm"
+AT+CIUPDATE
+AT+UART=9600,8,1,0,0
+```
+
 ## Some Tips
 
 - Firmware version is very important. I tried with older version and moved to newer version, and the AT response is quite different.
