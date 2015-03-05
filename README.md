@@ -29,7 +29,7 @@ This is a very simple library for ESP8266 module from Ai-Thinker
 ```
 AT+CWMODE=1
 AT+RST
-AT+CWJAP="leekwon2G","xnvkdlqm"
+AT+CWJAP="leekwon2G","x"
 AT+CIUPDATE
 AT+UART=9600,8,1,0,0
 ```
