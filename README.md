@@ -9,6 +9,17 @@ This is a very simple library for ESP8266 module from Ai-Thinker
 - You'd better to use 115200 for HW Serial to don't become bottleneck for SoftSerial (I tested with 115200 usually)
 - AltSoftSerial (connected to ESP8266) works as 9600bps
 
+## My Current Hardware Configuration
+
+- I think I really need a power supply for 3.3v
+- My ESP8266 module looks like ESP-07
+- ESP8266 GPIO0 -> VCC
+- ESP8266 GPIO2 -> HIGH
+- ESP8266 GPIO15 -> GND
+- ESP8266 CH\_PD -> Pull-up
+- ESP8266 TXD -> Pro Mini D8
+- ESP8266 RXD -> Pro Mini D9
+
 ## Some Tips
 
 - Firmware version is very important. I tried with older version and moved to newer version, and the AT response is quite different.
