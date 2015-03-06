@@ -28,6 +28,7 @@ This is a very simple library for ESP8266 module from Ai-Thinker
 - Run the following AT commands with FTDI connection to ESP8266
 ```
 AT+CWMODE=1
+AT+CWAUTOCONN=0
 AT+RST
 AT+CWJAP="leekwon2G","x"
 AT+CIUPDATE

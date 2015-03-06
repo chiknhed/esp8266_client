@@ -2,7 +2,7 @@
 #include "ESP8266_client.h"
 #include <avr/pgmspace.h>
 
-#define WAIT_INIT_MS	5000
+#define WAIT_INIT_MS	7000
 #define AP_WAIT_MS		20000
 #define FIND_PEEK_DELAY_MS	5
 #define WAIT_CONNECTION_MS	10000
@@ -138,7 +138,7 @@ bool ESP8266ClientClass::ping(void)
 	mySerial.flushInput();
 	mySerial.setTimeout(PING_WAIT_MS);
 	
-	safePrint("AT", true);
+	safePrint(F("AT"), true);
 	if (!find(F("OK"))) {
 		return false;
 	}
@@ -203,7 +203,6 @@ wl_status_t ESP8266ClientClass::begin(char * ssid, char * passwd, byte * mac)
 	
 	trial = 0;
 	while(conState == WL_UNINIT) {
-		mySerial.setTimeout(NORMAL_COMMAND_RESP_MS);
 		if(ping()) {
 			conState = WL_DISCONNECTED;
 			break;
@@ -249,11 +248,12 @@ wl_status_t ESP8266ClientClass::begin(char * ssid, char * passwd, byte * mac)
 	conState = WL_DISCONNECTED;
 	if (!ssid)
 		return conState;
-		
-	/* set mode to STA */
+	
+/*	//should be set in the initial UART session for setup
 	mySerial.println(F("AT+CWMODE=1"));
 	delay(500);
 	mySerial.flushInput();
+*/
 		
 	/* connect to the AP */
 	mySerial.setTimeout(AP_WAIT_MS);
