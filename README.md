@@ -16,7 +16,7 @@ This is a very simple library for ESP8266 module from Ai-Thinker
 - ESP8266 GPIO0 -> VCC
 - ESP8266 GPIO2 -> HIGH
 - ESP8266 GPIO15 -> GND
-- ESP8266 CH\_PD -> Pull-up (Only this pin should be pull-up for me.. Why?)
+- ESP8266 CH\_PD -> HIGH
 - ESP8266 TXD -> Pro Mini D8 or Mega D48
 - ESP8266 RXD -> Pro Mini D9 or Mega D46
 
