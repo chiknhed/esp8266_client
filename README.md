@@ -11,7 +11,7 @@ This is a very simple library for ESP8266 module from Ai-Thinker
 
 ## My Current Hardware Configuration
 
-- Murata 5v -> 3.3v regulator
+- External 3.3v power supply
 - My ESP8266 module looks like ESP-07
 - ESP8266 GPIO0 -> VCC
 - ESP8266 GPIO2 -> HIGH
